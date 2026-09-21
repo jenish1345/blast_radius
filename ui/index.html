@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blast Radius — Preflight Safety Gate for Autonomous Agents</title>
+  
+  <!-- Fonts: Manrope & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Linked Stylesheet -->
+  <link rel="stylesheet" href="/ui/style.css">
+
+  <!-- Three.js Pinned CDN via Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <!-- Prevent Theme Flash -->
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('blast_radius_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- 4.1 Telemetry Bar (48px) -->
+  <header class="telemetry-bar">
+    <div class="tel-left">
+      <div class="brand-wrap">
+        <span>Blast</span><span class="brand-mark">Radius</span>
+      </div>
+      <button class="session-chip" id="session-chip" title="Click to copy session ID" aria-label="Session ID">
+        <span>Session:</span>
+        <span id="session-chip-text">—</span>
+      </button>
+    </div>
+
+    <div class="tel-center">
+      <div class="counter-item">
+        <span class="c-label">Steps:</span>
+        <span class="c-val" id="cnt-steps">—</span>
+      </div>
+      <div class="counter-item">
+        <span class="c-label">Blocked:</span>
+        <span class="c-val" id="cnt-blocked">0</span>
+      </div>
+      <div class="counter-item">
+        <span class="c-label">Drift:</span>
+        <span class="c-val" id="cnt-drift">—</span>
+      </div>
+      <div class="counter-item">
+        <span class="c-label">Blast:</span>
+        <span class="c-val" id="cnt-blast">—</span>
+      </div>
+      <div class="counter-item">
+        <span class="c-label">Tavily:</span>
+        <span class="c-val" id="cnt-tavily">—</span>
+      </div>
+      <div class="counter-item">
+        <span class="c-label">Model:</span>
+        <span class="c-val" id="cnt-tier">Nano 30B</span>
+      </div>
+    </div>
+
+    <div class="tel-right">
+      <div class="connection-status">
+        <span class="status-dot" id="conn-dot"></span>
+      </div>
+      <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Cockpit 40/60 Layout -->
+  <main class="cockpit-layout">
+    
+    <!-- Left: 3D Particle Stage & Blast Gauge -->
+    <section class="stage-column" aria-label="Interactive 3D Safety Stage">
+      <div class="stage-canvas-wrap" id="stage-mount"></div>
+      <div class="stage-overlay" id="gauge-mount"></div>
+    </section>
+
+    <!-- Right: Content & Controls -->
+    <section class="content-column" aria-label="Preflight Gate Controls and Diagnostics">
+      
+      <!-- Inline Error / Notification Box -->
+      <div class="inline-notice" id="inline-notice-box" style="display:none"></div>
+
+      <!-- 4.6 Verdict Banner (Hidden by default) -->
+      <div class="verdict-banner" id="verdict-banner" style="display:none">
+        <div class="vb-content">
+          <span class="vb-title" id="vb-title">BLOCKED BY PREFLIGHT</span>
+          <span class="vb-reason" id="vb-reason">—</span>
+        </div>
+        <button class="vb-close-btn" onclick="this.closest('.verdict-banner').style.display='none'" aria-label="Close verdict banner">&times;</button>
+      </div>
+
+      <!-- 4.3 Composer -->
+      <section class="composer-card" aria-label="Action Composer">
+        <div class="composer-row">
+          <label class="composer-label" for="composer-intent">Declared intent (what the agent believes it is doing)</label>
+          <textarea class="composer-textarea" id="composer-intent" placeholder="e.g., Clean obsolete log files older than 30 days without modifying runtime services…"></textarea>
+        </div>
+
+        <div class="composer-row">
+          <label class="composer-label" for="composer-action">Proposed shell action</label>
+          <input class="composer-input" id="composer-action" placeholder="e.g., find /var/log -name '*.log' -mtime +30 -delete" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="composer-actions">
+          <div class="composer-scenario-wrap">
+            <select class="scenario-select" id="scenario-select" aria-label="Load scenario"></select>
+          </div>
+          <div class="composer-btn-group">
+            <button class="btn btn-demo" id="btn-demo" title="Run full 6-feature demo test sequence">Demo sequence</button>
+            <button class="btn btn-secondary" id="btn-refine" title="Invoke Nemotron Super to re-plan command">Run refine loop</button>
+            <button class="btn btn-primary" id="btn-analyze" title="Run preflight pre-execution gate">Analyze action</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4.4 Pipeline Stepper -->
+      <nav class="pipeline-timeline" aria-label="Preflight Safety Pipeline">
+        <div class="timeline-step" id="step-premise">
+          <span class="step-marker"></span>
+          <span>Premise check</span>
+        </div>
+        <div class="timeline-divider"></div>
+        <div class="timeline-step" id="step-sandbox">
+          <span class="step-marker"></span>
+          <span>Sandbox fork</span>
+        </div>
+        <div class="timeline-divider"></div>
+        <div class="timeline-step" id="step-refine">
+          <span class="step-marker"></span>
+          <span>Refinement</span>
+        </div>
+        <div class="timeline-divider"></div>
+        <div class="timeline-step" id="step-blast">
+          <span class="step-marker"></span>
+          <span>Blast score</span>
+        </div>
+        <div class="timeline-divider"></div>
+        <div class="timeline-step" id="step-intent">
+          <span class="step-marker"></span>
+          <span>Cross-step tracking</span>
+        </div>
+        <div class="timeline-divider"></div>
+        <div class="timeline-step" id="step-verdict">
+          <span class="step-marker"></span>
+          <span>Verdict</span>
+        </div>
+      </nav>
+
+      <!-- 4.5 Collapsible Feature Rows (All 6 Visible in First Viewport) -->
+      <div class="feature-rows-container">
+        
+        <!-- 1. Premise Check -->
+        <article class="feature-row" id="row-premise">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-green"></span>
+              <span class="fr-title">1. Premise check</span>
+              <span class="fr-summary" id="fr1-summary">No active premises verified</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <div class="premise-list" id="premise-list-container">
+                <span style="color:var(--text-muted);font-size:12.5px">No factual premises checked yet. Run an action with external version or CVE claims to inspect live Tavily ground truth.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 2. Refinement Loop -->
+        <article class="feature-row" id="row-refinement">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-yellow"></span>
+              <span class="fr-title">2. Refinement</span>
+              <span class="fr-summary" id="fr2-summary">Idle — 0 iterations</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <div class="refinement-grid" id="refinement-container">
+                <span style="color:var(--text-muted);font-size:12.5px">When drift occurs, the self-refining loop re-plans with Super up to 3 times to achieve clean convergence.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3. Blast Radius Breakdown -->
+        <article class="feature-row" id="row-blast">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-green"></span>
+              <span class="fr-title">3. Blast radius breakdown</span>
+              <span class="fr-summary" id="fr3-summary">GREEN tier · score 0.000</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <span style="color:var(--text-muted);font-size:12.5px">Composite index computed from files touched (25%), sensitive paths (35%), write ratio (20%), and root escalation (20%). See stage gauges for telemetry.</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4. Intent Tracking -->
+        <article class="feature-row" id="row-intent">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-green"></span>
+              <span class="fr-title">4. Intent tracking</span>
+              <span class="fr-summary" id="fr4-summary">Needs at least 2 steps for cross-step analysis</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <div id="intent-tracking-container">
+                <span style="color:var(--text-muted);font-size:12.5px">Cross-step anomaly detection (goal drift, scope creep, contradiction) evaluates step history via Nemotron Ultra.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 5. Counterfactuals -->
+        <article class="feature-row" id="row-counterfactuals">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-yellow"></span>
+              <span class="fr-title">5. Counterfactuals</span>
+              <span class="fr-summary" id="fr5-summary">No counterfactuals: action was allowed</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <div id="counterfactuals-container">
+                <span style="color:var(--text-muted);font-size:12.5px">Generates three grounded alternate timelines (Optimistic, Realistic, Catastrophic) whenever an action is blocked by preflight.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 6. Forensic Report + Download -->
+        <article class="feature-row" id="row-report">
+          <header class="feature-row-header" tabindex="0" role="button" aria-expanded="false">
+            <div class="fr-left">
+              <span class="fr-status-dot dot-green"></span>
+              <span class="fr-title">6. Forensic report</span>
+              <span class="fr-summary" id="fr6-summary">Awaiting completed run</span>
+            </div>
+            <div class="fr-right">
+              <svg class="fr-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </header>
+          <div class="feature-row-body">
+            <div class="feature-row-inner">
+              <div class="report-actions-row">
+                <button class="btn btn-secondary" id="btn-download-report">Download report (.json)</button>
+              </div>
+              <pre class="report-code-block" id="report-preview">{ "status": "idle", "message": "Execute a scenario or action to compile forensic report." }</pre>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Main ES Module -->
+  <script type="module" src="/ui/app.js"></script>
+</body>
+</html>

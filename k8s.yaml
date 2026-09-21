@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: blast-radius-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blast-radius
+spec:
+  replicas: 1                    # SQLite + in-process run registry: do not scale out
+  selector:
+    matchLabels: { app: blast-radius }
+  template:
+    metadata:
+      labels: { app: blast-radius }
+    spec:
+      containers:
+        - name: app
+          image: cr.eu-north1.nebius.cloud/REPLACE_ME/blast-radius:1.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef: { name: blastradius-env }
+          env:
+            - name: BR_DB_PATH
+              value: /data/blastradius.db
+          volumeMounts:
+            - { name: data, mountPath: /data }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 8000 }
+            initialDelaySeconds: 8
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits:   { cpu: "1",    memory: "1Gi" }
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: blast-radius-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blast-radius
+spec:
+  type: LoadBalancer
+  selector: { app: blast-radius }
+  ports:
+    - port: 80
+      targetPort: 8000
