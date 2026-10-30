@@ -131,6 +131,13 @@ cd site && npm install && npm run dev   # http://localhost:5173
 - **Recorded runs are read-only.** They are real runs stored in the same tables as live ones, and
   the UI labels them; you cannot approve or reject a gate in a replay.
 
+## Submission Period
+
+Blast Radius was built for the Nebius × NVIDIA Global AI Hackathon. This repository was created on
+21 September 2026 — after the Submission Period opened on 26 August 2026 — and its entire commit
+history falls inside the period: the fork-and-diff gate, the seeded scenarios, the operator console
+(`ui/`) and the landing site (`site/`).
+
 ## Feedback on Nebius and NVIDIA
 
 See [`FEEDBACK.md`](FEEDBACK.md).
