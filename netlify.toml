@@ -1,0 +1,8 @@
+# Netlify: New site -> Import from Git -> jenish1345/blast_radius. Nothing else to configure.
+[build]
+  base = "site"
+  command = "npm run build"
+  publish = "site/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
