@@ -37,7 +37,7 @@ plenty — no GPU, all inference is remote. Ubuntu 24.04. Add your SSH key. Open
 ```bash
 ssh ubuntu@<vm-ip>
 sudo apt update && sudo apt install -y python3-venv git nginx
-git clone https://github.com/<you>/blast-radius.git && cd blast-radius
+git clone https://github.com/jenish1345/blast_radius.git blast-radius && cd blast-radius
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env && nano .env        # paste NEBIUS_API_KEY and TAVILY_API_KEY
