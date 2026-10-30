@@ -24,6 +24,19 @@ Nebius AI Cloud", so either satisfies eligibility; using both is the strongest s
 
 ---
 
+## Option C — Render Blueprint (fastest, ~5 minutes)
+
+`render.yaml` in the repo root describes the service. In the Render dashboard choose
+**New → Blueprint**, select this repository, then paste `NEBIUS_API_KEY` (and optionally
+`TAVILY_API_KEY`) in the service's **Environment** tab. Render builds the `Dockerfile` and serves the
+operator console at `https://<service>.onrender.com/`.
+
+Notes: the free plan sleeps when idle (first request takes ~30 s) and keeps the SQLite database in
+`/tmp`, so runs are lost on restart. Inference still runs on Nebius Token Factory, which satisfies the
+hackathon's "runs on Nebius Token Factory" rule (a runtime call to the Token Factory inference API).
+
+---
+
 ## Option A — Nebius AI Cloud VM (recommended, ~40 minutes)
 
 This is the one to do. It keeps the whole stack on Nebius, which is a real point on the
