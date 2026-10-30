@@ -1,0 +1,18 @@
+# One-click deploy: Render dashboard -> New -> Blueprint -> pick this repo.
+# Inference still runs on Nebius Token Factory (Nemotron); Render only hosts the API + console.
+# After the first deploy, open the service's Environment tab and paste NEBIUS_API_KEY
+# (and optionally TAVILY_API_KEY). The keys are never stored in this repository.
+services:
+  - type: web
+    name: blast-radius
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: BR_DB_PATH
+        value: /tmp/blastradius.db
