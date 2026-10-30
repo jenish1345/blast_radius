@@ -44,7 +44,7 @@ export function Footer() {
       <div className="flex flex-col justify-between gap-10 md:flex-row">
         <div className="max-w-md">
           <div className="flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="" className="h-9 w-9" />
+            <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="h-9 w-9" />
             <span className="text-2xl font-extrabold">Blast Radius</span>
           </div>
           <p className="mt-3 text-lg leading-snug">
