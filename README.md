@@ -2,9 +2,6 @@
 
 **Observability records what happened. Nothing records what the agent *meant* to do.**
 
-<!-- REPLACE THIS LINE with docs/hero.gif — the green-dashboard / red-diff moment.
-     It is the first thing a judge sees and it is worth more than the next 200 words. -->
-
 Blast Radius is a preflight gate for autonomous agents. Before an agent's action touches
 anything real, it forks the sandbox image, runs the action **in the fork only**, diffs the fork
 against the parent, and compares that diff against what the agent said it was about to do.
@@ -13,7 +10,7 @@ An agent can call twelve tools, get `exit 0` twelve times, report normal cost an
 still have done the wrong thing. Every mutation-verification tool returns green on that case,
 because the mutation *did* happen. Only comparing the change against the stated intent catches it.
 
-**Live demo:** `http://<your-host>/`
+**Repository:** https://github.com/jenish1345/blast_radius · **Licence:** Apache-2.0
 **Track:** Best Apps and Agents
 
 ---
@@ -89,7 +86,7 @@ system genuinely gets worse at its job.
 ## Run it
 
 ```bash
-git clone https://github.com/<you>/blast-radius.git && cd blast-radius
+git clone https://github.com/jenish1345/blast_radius.git blast-radius && cd blast-radius
 make install && source .venv/bin/activate
 make env                 # then paste NEBIUS_API_KEY into .env
 python probe_sdk.py      # prints the real ConTree SDK surface
@@ -106,6 +103,17 @@ make demo                # records a real run of the drift scenario
 The seeded state is real: 47 files, 44 with mtimes set 31–74 days in the past, 3 written today.
 The drift is **produced by the model, not injected** — we do not script the failure. If your model
 gets it right, that is a CLEAN verdict and an honest result.
+
+---
+
+## Landing site
+
+The interactive landing page (React + Vite + Tailwind) lives in [`site/`](site/). The operator
+console served by the API stays in `ui/`.
+
+```bash
+cd site && npm install && npm run dev   # http://localhost:5173
+```
 
 ---
 
