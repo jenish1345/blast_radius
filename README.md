@@ -11,6 +11,7 @@ still have done the wrong thing. Every mutation-verification tool returns green 
 because the mutation *did* happen. Only comparing the change against the stated intent catches it.
 
 **Repository:** https://github.com/jenish1345/blast_radius · **Licence:** Apache-2.0
+**Landing site + interactive replay:** http://houseofelleora.me/blast_radius/
 **Track:** Best Apps and Agents
 
 ---
